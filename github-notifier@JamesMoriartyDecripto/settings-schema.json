@@ -49,9 +49,35 @@
         "description": "Text color of the notification counter",
         "tooltip": "Choose a text color for the notification display"
     },
+    "border-color": {
+        "type": "colorchooser",
+        "default": "#FFFFFF",  
+        "description": "Border color of the container",
+        "tooltip": "Choose a border color for the container"
+    },
+    "border-width": {
+        "type": "spinbutton",
+        "default": 2,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "units": "pixels",
+        "description": "Border width of the container",
+        "tooltip": "Set the border width of the container"
+    },
     "customization-settings-header": {
         "type": "header",
         "description": "Customization Settings"
+    },
+    "notification-count": {
+        "type": "spinbutton",
+        "default": 3,
+        "min": 1,
+        "max": 10,
+        "step": 1,
+        "units": "notifications",
+        "description": "Number of notifications to display",
+        "tooltip": "Set the number of notifications to display at one time"
     },
     "scale-size": {
         "type": "scale",

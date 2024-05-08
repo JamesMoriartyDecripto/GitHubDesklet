@@ -4,6 +4,7 @@ const Soup = imports.gi.Soup;
 const Lang = imports.lang;
 const Mainloop = imports.mainloop;
 const Settings = imports.ui.settings;
+const Clutter = imports.gi.Clutter;
 
 const httpSession = new Soup.SessionAsync();
 Soup.Session.prototype.add_feature.call(httpSession, new Soup.ProxyResolverDefault());
@@ -18,11 +19,17 @@ GitHubNotificationsDesklet.prototype = {
     _init: function(metadata, desklet_id) {
         Desklet.Desklet.prototype._init.call(this, metadata, desklet_id);
 
-        // Initialize settings
         this.settings = new Settings.DeskletSettings(this, metadata.uuid, desklet_id);
         this.settings.bind('github-token', 'githubToken', this.onSettingsChanged);
         this.settings.bind('refresh-interval', 'refreshInterval', this.onSettingsChanged);
         this.settings.bind('notification-display-mode', 'notificationDisplayMode', this.onSettingsChanged);
+        this.settings.bind('notification-count', 'notificationCount', this.onSettingsChanged);
+        this.settings.bind('background-color', 'backgroundColor', this.onSettingsChanged);
+        this.settings.bind('text-color', 'textColor', this.onSettingsChanged);
+        this.settings.bind('border-color', 'borderColor', this.onSettingsChanged);
+        this.settings.bind('border-width', 'borderWidth', this.onSettingsChanged);
+
+
 
         this.setupUI();
         this.fetchData(true);
@@ -30,26 +37,92 @@ GitHubNotificationsDesklet.prototype = {
 
     setupUI: function() {
         this.container = new St.BoxLayout({ vertical: true, style_class: 'container' });
+        this.container.set_reactive(true);
+        this.container.connect('scroll-event', Lang.bind(this, this._onScrollEvent));
         this.label = new St.Label({ text: "Loading notifications..." });
         this.container.add(this.label);
         this.setContent(this.container);
+    
+        this.displayedNotifications = [];
+        this.notificationOffset = 0;
+        this.updateStyles();  // Applica gli stili iniziali
+    },
+    
+    updateStyles: function() {
+        // Log per confermare i valori
+        global.log("Updating styles with BG color: " + this.backgroundColor + ", Border Color: " + this.borderColor + ", Border Width: " + this.borderWidth);
+    
+        this.container.style = "background-color: " + this.backgroundColor + 
+                               "; border: " + this.borderWidth + "px solid " + this.borderColor + 
+                               "; border-radius: 8px; padding: 10px;";
+        this.applyTextStyles();
+    },
+    
+    
+    
+    
+
+    _onScrollEvent: function(actor, event) {
+        let direction = event.get_scroll_direction();
+        if (direction === Clutter.ScrollDirection.UP) {
+            this._scrollUp();
+        } else if (direction === Clutter.ScrollDirection.DOWN) {
+            this._scrollDown();
+        }
+    },
+
+    _scrollUp: function() {
+        if (this.notificationOffset > 0) {
+            this.notificationOffset -= this.notificationCount;
+            this.updateDisplayedNotifications();
+        }
+    },
+
+    _scrollDown: function() {
+        if (this.notificationOffset < this.displayedNotifications.length - this.notificationCount) {
+            this.notificationOffset += this.notificationCount;
+            this.updateDisplayedNotifications();
+        }
     },
 
     displayNotifications: function(data) {
-        this.container.remove_all_children(); // Clear the container before adding new content
+        this.container.remove_all_children();
+        this.displayedNotifications = data;
+        
+        this.updateDisplayedNotifications();
+    },
 
+    updateDisplayedNotifications: function() {
+        this.container.remove_all_children();
         if (this.notificationDisplayMode === "count-only") {
-            this.label = new St.Label({ text: `GitHub notifications: ${data.length}` });
+            this.label = new St.Label({ text: `GitHub notifications: ${this.displayedNotifications.length}` });
             this.container.add(this.label);
         } else if (this.notificationDisplayMode === "list-recent") {
-            this.label = new St.Label({ text: 'Latest notifications:' });
-            this.container.add(this.label);
-            data.slice(0, 10).forEach(notification => {
-                let detailLabel = new St.Label({ text: `${notification.reason}: ${notification.subject.title} - ${notification.repository.full_name}`, style_class: 'notification-detail' });
+            this.displayedNotifications.slice(this.notificationOffset, this.notificationOffset + this.notificationCount).forEach(notification => {
+                let detailLabel = new St.Label({ 
+                    text: `${notification.reason}: ${notification.subject.title} - ${notification.repository.full_name}`, 
+                    style_class: 'notification-detail' 
+                });
                 this.container.add(detailLabel);
             });
+            if (this.notificationOffset > 0) {
+                this.container.insert_child_at_index(new St.Label({ text: "Scroll up for more", style_class: 'scroll-indicator' }), 0);
+            }
+            if (this.notificationOffset < this.displayedNotifications.length - this.notificationCount) {
+                this.container.add(new St.Label({ text: "Scroll down for more", style_class: 'scroll-indicator' }));
+            }
+        }
+        // Apply styles after adding text elements
+        this.applyTextStyles();
+    },
+    
+    applyTextStyles: function() {
+        let textElements = this.container.get_children();
+        for (let elem of textElements) {
+            elem.style = "color: " + this.textColor + ";";
         }
     },
+    
 
     fetchData: function(initUI = false) {
         if (!this.githubToken) {
@@ -81,8 +154,10 @@ GitHubNotificationsDesklet.prototype = {
     },
 
     onSettingsChanged: function() {
+        this.updateStyles();  // Aggiorna gli stili con le nuove impostazioni
         this.fetchData(true);
     },
+    
 
     on_desklet_removed: function() {
         if (this.mainloop) {
