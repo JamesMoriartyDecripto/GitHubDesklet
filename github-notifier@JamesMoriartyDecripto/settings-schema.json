@@ -53,12 +53,6 @@
         "type": "header",
         "description": "Customization Settings"
     },
-    "show-details": {
-        "type": "checkbox",
-        "default": false,
-        "description": "Show detailed notifications",
-        "tooltip": "Enable to show detailed notifications instead of just the count"
-    },
     "scale-size": {
         "type": "scale",
         "default": 1,

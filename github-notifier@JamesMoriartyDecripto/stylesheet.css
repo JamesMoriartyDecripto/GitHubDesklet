@@ -4,4 +4,14 @@
     padding: 10px;
     border-radius: 8px;
     border: 2px solid white; /* Aggiungi un bordo bianco per visibilità */
+    margin-bottom: 10px;
+}
+
+.notification-detail {
+    padding: 5px;
+    margin-top: 5px;
+    font-size: 0.9em; /* Imposta la dimensione del font leggermente più piccola */
+    color: #FFF; /* Colore del testo bianco */
+    background-color: rgba(255, 255, 255, 0.1); /* Sfondo leggermente visibile per distinguere i dettagli */
+    border-radius: 4px; /* Angoli arrotondati per i dettagli delle notifiche */
 }

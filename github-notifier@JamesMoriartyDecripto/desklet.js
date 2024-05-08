@@ -22,6 +22,7 @@ GitHubNotificationsDesklet.prototype = {
         this.settings = new Settings.DeskletSettings(this, metadata.uuid, desklet_id);
         this.settings.bind('github-token', 'githubToken', this.onSettingsChanged);
         this.settings.bind('refresh-interval', 'refreshInterval', this.onSettingsChanged);
+        this.settings.bind('notification-display-mode', 'notificationDisplayMode', this.onSettingsChanged);
 
         this.setupUI();
         this.fetchData(true);
@@ -32,6 +33,22 @@ GitHubNotificationsDesklet.prototype = {
         this.label = new St.Label({ text: "Loading notifications..." });
         this.container.add(this.label);
         this.setContent(this.container);
+    },
+
+    displayNotifications: function(data) {
+        this.container.remove_all_children(); // Clear the container before adding new content
+
+        if (this.notificationDisplayMode === "count-only") {
+            this.label = new St.Label({ text: `GitHub notifications: ${data.length}` });
+            this.container.add(this.label);
+        } else if (this.notificationDisplayMode === "list-recent") {
+            this.label = new St.Label({ text: 'Latest notifications:' });
+            this.container.add(this.label);
+            data.slice(0, 10).forEach(notification => {
+                let detailLabel = new St.Label({ text: `${notification.reason}: ${notification.subject.title} - ${notification.repository.full_name}`, style_class: 'notification-detail' });
+                this.container.add(detailLabel);
+            });
+        }
     },
 
     fetchData: function(initUI = false) {
@@ -48,7 +65,7 @@ GitHubNotificationsDesklet.prototype = {
         httpSession.queue_message(message, Lang.bind(this, function(session, response) {
             if (response.status_code === 200) {
                 let data = JSON.parse(response.response_body.data);
-                this.label.set_text('GitHub notifications: ' + data.length);
+                this.displayNotifications(data);
             } else {
                 this.label.set_text('Error loading notifications: Status ' + response.status_code);
                 global.log('Error: ' + response.status_code + ' - ' + response.response_body.data);
