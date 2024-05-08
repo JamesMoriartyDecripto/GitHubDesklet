@@ -4,7 +4,7 @@
 SOURCE_DIR="$(pwd)/github-notifier@JamesMoriartyDecripto"
 
 # Definisce il percorso della cartella di destinazione dei desklets
-DEST_DIR="/home/james/.local/share/cinnamon/desklets"
+DEST_DIR="/home/{user}/.local/share/cinnamon/desklets"
 
 # Nome del desklet
 DESKLET_DIR="github-notifier@JamesMoriartyDecripto"

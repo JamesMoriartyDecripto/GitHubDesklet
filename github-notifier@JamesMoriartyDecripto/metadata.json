@@ -2,7 +2,7 @@
     "uuid": "github-notifier@JamesMoriartyDecripto",
     "name": "GitHub Notifier",
     "description": "Displays the number of GitHub notifications.",
-    "icon": "icons/new-notification.png",
+    "icon": "icon.png",
     "author": "JamesMoriartyDecripto",
-    "version": "1.0"
+    "version": "1.6"
 }
