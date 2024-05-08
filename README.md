@@ -19,6 +19,8 @@ cd GitHubDesklet
 
 `DEST_DIR="/home/{user}/.local/share/cinnamon/desklets"`
 
+Per esempio: `DEST_DIR="/home/james/.local/share/cinnamon/desklets"`
+
 4. Install the desklet
 
 ```
