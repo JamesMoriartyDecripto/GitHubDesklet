@@ -56,3 +56,9 @@ Press `Alt + F2` then type `r` and press enter
     - Set the `Expiration` that you prefer
     - Check the `notifications` checkbox
     - Click on `Generate token` (green button at the end)
+
+8. Install xdotool to get the window just opened in front of others
+
+```
+sudo apt-get install xdotool
+```

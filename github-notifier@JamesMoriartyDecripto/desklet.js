@@ -5,11 +5,10 @@ const Lang = imports.lang;
 const Mainloop = imports.mainloop;
 const Settings = imports.ui.settings;
 const Clutter = imports.gi.Clutter;
+const Util = imports.misc.util;
 
 const httpSession = new Soup.SessionAsync();
 Soup.Session.prototype.add_feature.call(httpSession, new Soup.ProxyResolverDefault());
-
-const Gio = imports.gi.Gio;
 
 function GitHubNotificationsDesklet(metadata, desklet_id) {
     this._init(metadata, desklet_id);
@@ -37,7 +36,7 @@ GitHubNotificationsDesklet.prototype = {
 
     transformUrl: function(apiUrl) {
         return apiUrl.replace('api.github.com/repos', 'github.com').replace('/issues/', '/issues/');
-    },
+    },    
 
     setupUI: function() {
         this.container = new St.BoxLayout({ vertical: true, style_class: 'container' });
@@ -46,7 +45,6 @@ GitHubNotificationsDesklet.prototype = {
         this.label = new St.Label({ text: "Loading notifications..." });
         this.container.add(this.label);
         this.setContent(this.container);
-    
         this.displayedNotifications = [];
         this.notificationOffset = 0;
         this.updateStyles();  // Applica gli stili iniziali
@@ -141,8 +139,10 @@ GitHubNotificationsDesklet.prototype = {
                     style_class: 'notification-detail'
                 });
                 detailLabel.connect('clicked', Lang.bind(this, function() {
+                    global.log("Attempting to open URL: " + transformedUrl);  // Add logging to ensure this runs
                     this._openUrl(transformedUrl);
                 }));
+                
                 this.container.add(detailLabel);
             });
         }
@@ -152,11 +152,17 @@ GitHubNotificationsDesklet.prototype = {
     },
     
     _openUrl: function(url) {
-        if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            global.log("Invalid URL: " + url);
-            return;
-        }
-        Gio.AppInfo.launch_default_for_uri(url, global.create_app_launch_context());
+        Util.spawnCommandLine("xdg-open " + url);
+        
+        // Timeout to allow the browser to open before we attempt to focus it
+        Mainloop.timeout_add(3000, Lang.bind(this, function() {
+            // Replace 'Firefox' with your preferred browser's class name, or make it configurable
+            let browserClass = this.browserClass || 'Firefox';  // assuming browserClass is defined in your settings
+            let command = `xdotool search --class '${browserClass}' sort %@ windowactivate %@`;
+            
+            // Execute the command
+            Util.spawnCommandLine(command);
+        }));
     },
 
     applyTextStyles: function() {
@@ -201,7 +207,6 @@ GitHubNotificationsDesklet.prototype = {
         this.fetchData(true);
     },
     
-
     on_desklet_removed: function() {
         if (this.mainloop) {
             Mainloop.source_remove(this.mainloop);
