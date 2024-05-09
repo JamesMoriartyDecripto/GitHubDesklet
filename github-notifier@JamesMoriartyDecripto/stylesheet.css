@@ -17,4 +17,12 @@
     border-radius: 4px; /* Angoli arrotondati per i dettagli delle notifiche */
     margin-bottom: 3px; /* Aumenta la separazione tra le notifiche per una migliore leggibilità */
     display: block; /* Assicura che ogni dettaglio sia su una nuova linea */
+    text-align: left; /* Allinea il testo a sinistra */
+    color: #00BFFF; /* Colore del testo, esempio blu per stile link */
+    /* text-decoration: underline;  Sottolinea per indicare cliccabilità */
+    cursor: pointer; /* Cambia il cursore in pointer per indicare interattività */
+}
+
+.notification-detail:hover {
+    background-color: rgba(255, 255, 255, 0.3); /* Leggermente più visibile all'hover */
 }

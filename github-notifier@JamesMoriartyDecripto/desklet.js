@@ -9,6 +9,8 @@ const Clutter = imports.gi.Clutter;
 const httpSession = new Soup.SessionAsync();
 Soup.Session.prototype.add_feature.call(httpSession, new Soup.ProxyResolverDefault());
 
+const Gio = imports.gi.Gio;
+
 function GitHubNotificationsDesklet(metadata, desklet_id) {
     this._init(metadata, desklet_id);
 }
@@ -29,10 +31,12 @@ GitHubNotificationsDesklet.prototype = {
         this.settings.bind('border-color', 'borderColor', this.onSettingsChanged);
         this.settings.bind('border-width', 'borderWidth', this.onSettingsChanged);
 
-
-
         this.setupUI();
         this.fetchData(true);
+    },
+
+    transformUrl: function(apiUrl) {
+        return apiUrl.replace('api.github.com/repos', 'github.com').replace('/issues/', '/issues/');
     },
 
     setupUI: function() {
@@ -103,57 +107,58 @@ GitHubNotificationsDesklet.prototype = {
             this.container.add(new St.Label({ text: "Scroll down for more", style_class: 'scroll-indicator' }));
         }
     },         
-
+    
     displayNotifications: function(data) {
         this.container.remove_all_children();
         this.displayedNotifications = data;
-        
         this.updateDisplayedNotifications();
     },
 
     updateDisplayedNotifications: function() {
         // Pulisce tutti i figli del container per una nuova visualizzazione
         this.container.remove_all_children();
-    
+        
         // Inserisce un'etichetta con il conteggio totale delle notifiche all'inizio per ogni modalità
         this.label = new St.Label({ text: `GitHub notifications: ${this.displayedNotifications.length}` });
         this.container.add(this.label);
-    
-        // Controllo della modalità di visualizzazione impostata e aggiornamento del contenuto del container di conseguenza
+        
+        // Differenzia tra visualizzazioni
         if (this.notificationDisplayMode === "count-only") {
-            // Per la modalità 'count-only', l'etichetta con il conteggio è già stata aggiunta sopra
-        } else if (this.notificationDisplayMode === "list-recent") {
-            // Visualizzazione dell'elenco delle notifiche recenti
-            this.displayedNotifications.slice(this.notificationOffset, this.notificationOffset + this.notificationCount).forEach(notification => {
-                let detailLabel = new St.Label({ 
-                    text: `${notification.reason}: ${notification.subject.title} - ${notification.repository.full_name}`, 
-                    style_class: 'notification-detail' 
-                });
-                this.container.add(detailLabel);
-            });
-            
-            // Aggiungi indicatori di scroll se necessario
-            if (this.notificationOffset > 0) {
-                this.container.insert_child_at_index(new St.Label({ text: "Scroll up for more", style_class: 'scroll-indicator' }), 1);
-            }
-            if (this.notificationOffset < this.displayedNotifications.length - this.notificationCount) {
-                this.container.add(new St.Label({ text: "Scroll down for more", style_class: 'scroll-indicator' }));
-            }
-        } else if (this.notificationDisplayMode === "detailed-view") {
-            // Visualizzazione dettagliata di tutte le notifiche
-            this.displayedNotifications.forEach(notification => {
-                let detailLabel = new St.Label({ 
-                    text: `Type: ${notification.reason}\nTitle: ${notification.subject.title}\nRepository: ${notification.repository.full_name}\nURL: ${notification.subject.url}`,
+            // Solo il conteggio delle notifiche
+        } else {
+            // Gestisce sia list-recent che detailed-view
+            this.displayedNotifications.slice(this.notificationOffset, Math.min(this.notificationOffset + this.notificationCount, this.displayedNotifications.length)).forEach(notification => {
+                let transformedUrl = this.transformUrl(notification.subject.url);
+                let detailText = `Type: ${notification.reason}\nTitle: ${notification.subject.title}\nRepo: ${notification.repository.full_name}`;
+                if (this.notificationDisplayMode === "detailed-view") {
+                    detailText += `\nDate: ${notification.updated_at}\nURL: ${transformedUrl}`;
+                } else {
+                    // Visualizzazione sintetizzata per list-recent
+                    detailText = `${notification.reason}: ${notification.subject.title} (${notification.repository.full_name})`;
+                }
+                let detailLabel = new St.Button({
+                    label: detailText,
                     style_class: 'notification-detail'
                 });
+                detailLabel.connect('clicked', Lang.bind(this, function() {
+                    this._openUrl(transformedUrl);
+                }));
                 this.container.add(detailLabel);
             });
         }
-    
-        // Riapplica gli stili di testo dopo l'aggiornamento dei contenuti
-        this.applyTextStyles();
+        
+        this.updateScrollIndicators(); // Aggiorna gli indicatori di scroll
+        this.applyTextStyles(); // Riapplica gli stili di testo
     },
     
+    _openUrl: function(url) {
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            global.log("Invalid URL: " + url);
+            return;
+        }
+        Gio.AppInfo.launch_default_for_uri(url, global.create_app_launch_context());
+    },
+
     applyTextStyles: function() {
         let textElements = this.container.get_children();
         for (let elem of textElements) {
