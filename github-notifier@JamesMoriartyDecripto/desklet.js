@@ -96,17 +96,22 @@ GitHubNotificationsDesklet.prototype = {
             }
         });
     
+        // Se la modalità di visualizzazione è "count-only", non aggiungere gli indicatori
+        if (this.notificationDisplayMode === "count-only") {
+            return;
+        }
+    
         // Aggiunge l'indicatore "Scroll up for more" solo se l'offset è maggiore di zero
         if (this.notificationOffset > 0) {
             this.container.insert_child_at_index(new St.Label({ text: "Scroll up for more", style_class: 'scroll-indicator' }), 0);
         }
-        
+    
         // Aggiunge l'indicatore "Scroll down for more" solo se ci sono altre notifiche sotto quelle attualmente visualizzate
         if (this.notificationOffset + this.notificationCount < this.displayedNotifications.length) {
             this.container.add(new St.Label({ text: "Scroll down for more", style_class: 'scroll-indicator' }));
         }
-    },         
-    
+    },
+   
     displayNotifications: function(data) {
         this.container.remove_all_children();
         this.displayedNotifications = data;

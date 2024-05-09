@@ -1,7 +1,7 @@
 {
     "uuid": "github-notifier@JamesMoriartyDecripto",
     "name": "GitHub Notifier",
-    "description": "Displays the number of GitHub notifications.",
+    "description": "Displays the number of GitHub notifications.\nWhen click on a notification, will open it in the browser.\nOther info in the README.md",
     "icon": "icon.png",
     "author": "JamesMoriartyDecripto",
     "version": "1.6"
