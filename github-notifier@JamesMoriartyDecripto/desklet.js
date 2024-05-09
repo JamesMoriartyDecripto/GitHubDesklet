@@ -57,10 +57,6 @@ GitHubNotificationsDesklet.prototype = {
                                "; border-radius: 8px; padding: 10px;";
         this.applyTextStyles();
     },
-    
-    
-    
-    
 
     _onScrollEvent: function(actor, event) {
         let direction = event.get_scroll_direction();
@@ -70,20 +66,43 @@ GitHubNotificationsDesklet.prototype = {
             this._scrollDown();
         }
     },
-
+    
     _scrollUp: function() {
+        // Scrolling verso l'alto: decrementa l'offset solo se maggiore di zero
         if (this.notificationOffset > 0) {
-            this.notificationOffset -= this.notificationCount;
+            this.notificationOffset = Math.max(0, this.notificationOffset - this.notificationCount);
             this.updateDisplayedNotifications();
+            this.updateScrollIndicators();
         }
     },
-
+    
     _scrollDown: function() {
-        if (this.notificationOffset < this.displayedNotifications.length - this.notificationCount) {
-            this.notificationOffset += this.notificationCount;
+        // Scrolling verso il basso: incrementa l'offset solo se non raggiunge l'ultimo elemento visibile
+        if (this.notificationOffset + this.notificationCount < this.displayedNotifications.length) {
+            this.notificationOffset = Math.min(this.displayedNotifications.length - this.notificationCount, this.notificationOffset + this.notificationCount);
             this.updateDisplayedNotifications();
+            this.updateScrollIndicators();
         }
     },
+    
+    updateScrollIndicators: function() {
+        // Rimuove tutti gli indicatori di scroll esistenti per evitare duplicazioni
+        this.container.get_children().forEach(child => {
+            if (child.style_class === 'scroll-indicator') {
+                this.container.remove_actor(child);
+            }
+        });
+    
+        // Aggiunge l'indicatore "Scroll up for more" solo se l'offset è maggiore di zero
+        if (this.notificationOffset > 0) {
+            this.container.insert_child_at_index(new St.Label({ text: "Scroll up for more", style_class: 'scroll-indicator' }), 0);
+        }
+        
+        // Aggiunge l'indicatore "Scroll down for more" solo se ci sono altre notifiche sotto quelle attualmente visualizzate
+        if (this.notificationOffset + this.notificationCount < this.displayedNotifications.length) {
+            this.container.add(new St.Label({ text: "Scroll down for more", style_class: 'scroll-indicator' }));
+        }
+    },         
 
     displayNotifications: function(data) {
         this.container.remove_all_children();
@@ -93,11 +112,18 @@ GitHubNotificationsDesklet.prototype = {
     },
 
     updateDisplayedNotifications: function() {
+        // Pulisce tutti i figli del container per una nuova visualizzazione
         this.container.remove_all_children();
+    
+        // Inserisce un'etichetta con il conteggio totale delle notifiche all'inizio per ogni modalità
+        this.label = new St.Label({ text: `GitHub notifications: ${this.displayedNotifications.length}` });
+        this.container.add(this.label);
+    
+        // Controllo della modalità di visualizzazione impostata e aggiornamento del contenuto del container di conseguenza
         if (this.notificationDisplayMode === "count-only") {
-            this.label = new St.Label({ text: `GitHub notifications: ${this.displayedNotifications.length}` });
-            this.container.add(this.label);
+            // Per la modalità 'count-only', l'etichetta con il conteggio è già stata aggiunta sopra
         } else if (this.notificationDisplayMode === "list-recent") {
+            // Visualizzazione dell'elenco delle notifiche recenti
             this.displayedNotifications.slice(this.notificationOffset, this.notificationOffset + this.notificationCount).forEach(notification => {
                 let detailLabel = new St.Label({ 
                     text: `${notification.reason}: ${notification.subject.title} - ${notification.repository.full_name}`, 
@@ -105,14 +131,26 @@ GitHubNotificationsDesklet.prototype = {
                 });
                 this.container.add(detailLabel);
             });
+            
+            // Aggiungi indicatori di scroll se necessario
             if (this.notificationOffset > 0) {
-                this.container.insert_child_at_index(new St.Label({ text: "Scroll up for more", style_class: 'scroll-indicator' }), 0);
+                this.container.insert_child_at_index(new St.Label({ text: "Scroll up for more", style_class: 'scroll-indicator' }), 1);
             }
             if (this.notificationOffset < this.displayedNotifications.length - this.notificationCount) {
                 this.container.add(new St.Label({ text: "Scroll down for more", style_class: 'scroll-indicator' }));
             }
+        } else if (this.notificationDisplayMode === "detailed-view") {
+            // Visualizzazione dettagliata di tutte le notifiche
+            this.displayedNotifications.forEach(notification => {
+                let detailLabel = new St.Label({ 
+                    text: `Type: ${notification.reason}\nTitle: ${notification.subject.title}\nRepository: ${notification.repository.full_name}\nURL: ${notification.subject.url}`,
+                    style_class: 'notification-detail'
+                });
+                this.container.add(detailLabel);
+            });
         }
-        // Apply styles after adding text elements
+    
+        // Riapplica gli stili di testo dopo l'aggiornamento dei contenuti
         this.applyTextStyles();
     },
     

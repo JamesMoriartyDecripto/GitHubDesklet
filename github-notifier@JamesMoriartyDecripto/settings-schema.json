@@ -34,7 +34,8 @@
         "tooltip": "Choose how notifications should be displayed",
         "options": {
             "Count Only": "count-only",
-            "List Recent": "list-recent"
+            "List Recent": "list-recent",
+            "Detailed View": "detailed-view"
         }
     },
     "background-color": {
