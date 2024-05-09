@@ -1,7 +1,7 @@
 # GitHubDesklet
-Simple Linux Debian desklet to track GitHub's notification
+Simple Linux Debian desklet to track GitHub's notification. When a notification is clicked will open it in the browser.
 
-## Manual installation
+## Installation
 
 1. Clone this repo
 

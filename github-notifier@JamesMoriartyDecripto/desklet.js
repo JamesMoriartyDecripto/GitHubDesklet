@@ -6,6 +6,7 @@ const Mainloop = imports.mainloop;
 const Settings = imports.ui.settings;
 const Clutter = imports.gi.Clutter;
 const Util = imports.misc.util;
+const OpenBrowser = 'Firefox' // Replace 'Firefox' with your preferred browser's class name
 
 const httpSession = new Soup.SessionAsync();
 Soup.Session.prototype.add_feature.call(httpSession, new Soup.ProxyResolverDefault());
@@ -156,8 +157,7 @@ GitHubNotificationsDesklet.prototype = {
         
         // Timeout to allow the browser to open before we attempt to focus it
         Mainloop.timeout_add(3000, Lang.bind(this, function() {
-            // Replace 'Firefox' with your preferred browser's class name, or make it configurable
-            let browserClass = this.browserClass || 'Firefox';  // assuming browserClass is defined in your settings
+            let browserClass = this.browserClass || OpenBrowser; 
             let command = `xdotool search --class '${browserClass}' sort %@ windowactivate %@`;
             
             // Execute the command
